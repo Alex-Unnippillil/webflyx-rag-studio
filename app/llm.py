@@ -55,9 +55,7 @@ class RAGService:
         ).strip()
 
     def test_connection(self) -> str:
-        return self._chat(
-            "Reply with exactly: Webflyx connection OK"
-        )
+        return self._chat("Reply with exactly: Webflyx connection OK")
 
     def generate(
         self,
@@ -176,7 +174,7 @@ Example: [3, 2, 0, 1]
         combined: dict[object, dict] = {}
         current_query = query
 
-        for round_number in range(1, max_rounds + 1):
+        for _ in range(max_rounds):
             results = search_fn(current_query, limit)
             for result in results:
                 key = result.get("id") or result.get("title")
