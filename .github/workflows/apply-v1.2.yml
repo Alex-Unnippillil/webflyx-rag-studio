@@ -1,0 +1,52 @@
+name: Apply Webflyx 1.2 Upgrade
+
+on:
+  push:
+    branches: [polish-v1.2.0]
+    paths:
+      - ".github/workflows/apply-v1.2.yml"
+      - ".upgrade/**"
+      - "scripts/apply_upgrade.py"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: polish-v1.2.0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply polished application
+        run: python scripts/apply_upgrade.py
+
+      - name: Validate generated repository
+        shell: bash
+        run: |
+          python -m compileall -q app scripts tests
+          python - <<'PY'
+          import pathlib
+          import tomllib
+
+          tomllib.loads(pathlib.Path("pyproject.toml").read_text())
+          print("TOML validation passed")
+          PY
+
+      - name: Commit upgrade
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Polish Webflyx RAG Studio 1.2.0"
+          git push origin HEAD:polish-v1.2.0
