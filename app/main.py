@@ -1,11 +1,14 @@
 import logging
+import signal
 import sys
 from logging.handlers import RotatingFileHandler
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
-from .config import APP_NAME, LOG_DIR
+from .config import APP_AUTHOR, APP_NAME, LOG_DIR
 from .ui import MainWindow
+from .version import APP_VERSION
 
 
 def configure_logging() -> None:
@@ -15,27 +18,53 @@ def configure_logging() -> None:
         backupCount=3,
         encoding="utf-8",
     )
-
     formatter = logging.Formatter(
         "%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-
     handler.setFormatter(formatter)
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
 
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=[handler],
-    )
+
+def install_exception_hook() -> None:
+    logger = logging.getLogger("webflyx.unhandled")
+
+    def handle_exception(exc_type, exc_value, exc_traceback) -> None:
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logger.critical(
+            "Unhandled application exception",
+            exc_info=(exc_type, exc_value, exc_traceback),
+        )
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+    sys.excepthook = handle_exception
 
 
 def main() -> int:
     configure_logging()
+    install_exception_hook()
 
     application = QApplication(sys.argv)
     application.setApplicationName(APP_NAME)
+    application.setApplicationDisplayName(APP_NAME)
+    application.setApplicationVersion(APP_VERSION)
+    application.setOrganizationName(APP_AUTHOR)
 
     window = MainWindow()
     window.show()
+
+    # Keep Python's signal machinery responsive while Qt owns the event loop.
+    # In a development terminal, Ctrl+C now requests a normal window close
+    # instead of tearing down Python while Transformer worker threads are alive.
+    signal_timer = QTimer()
+    signal_timer.timeout.connect(lambda: None)
+    signal_timer.start(250)
+
+    def request_close(_signum, _frame) -> None:
+        window.close()
+
+    signal.signal(signal.SIGINT, request_close)
 
     return application.exec()
 

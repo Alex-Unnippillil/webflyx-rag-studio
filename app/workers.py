@@ -1,4 +1,5 @@
 import traceback
+from contextlib import suppress
 
 from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
@@ -7,6 +8,12 @@ class WorkerSignals(QObject):
     result = Signal(object)
     error = Signal(str)
     finished = Signal()
+
+
+def _safe_emit(signal, *args) -> None:
+    """Emit a Qt signal unless its QObject has already been destroyed."""
+    with suppress(RuntimeError):
+        signal.emit(*args)
 
 
 class Worker(QRunnable):
@@ -21,8 +28,8 @@ class Worker(QRunnable):
             value = self.function()
         except Exception as exc:
             traceback.print_exc()
-            self.signals.error.emit(str(exc))
+            _safe_emit(self.signals.error, str(exc))
         else:
-            self.signals.result.emit(value)
+            _safe_emit(self.signals.result, value)
         finally:
-            self.signals.finished.emit()
+            _safe_emit(self.signals.finished)
