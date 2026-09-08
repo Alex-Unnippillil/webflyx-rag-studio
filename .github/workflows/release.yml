@@ -44,9 +44,13 @@ jobs:
             --collect-all keyring `
             desktop_app.py
 
+          if (-not (Test-Path "dist\WebflyxRAG\WebflyxRAG.exe")) {
+            throw "PyInstaller did not produce WebflyxRAG.exe"
+          }
+
       - shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist-release
+          New-Item -ItemType Directory -Force dist-release | Out-Null
           Compress-Archive `
             -Path dist\WebflyxRAG\* `
             -DestinationPath dist-release\Webflyx-RAG-Studio-portable-windows-x64.zip
@@ -56,8 +60,31 @@ jobs:
 
       - shell: pwsh
         run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
-            packaging\WebflyxRAG.iss
+          $candidates = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          )
+
+          $iscc = $candidates |
+            Where-Object { $_ -and (Test-Path $_) } |
+            Select-Object -First 1
+
+          if (-not $iscc) {
+            $command = Get-Command iscc.exe -ErrorAction SilentlyContinue
+            if ($command) {
+              $iscc = $command.Source
+            }
+          }
+
+          if (-not $iscc) {
+            throw "Inno Setup compiler (ISCC.exe) was not found after installation."
+          }
+
+          & $iscc packaging\WebflyxRAG.iss
+
+          if (-not (Test-Path "dist-installer\Webflyx-RAG-Studio-Setup.exe")) {
+            throw "Inno Setup did not produce the expected installer."
+          }
 
       - uses: softprops/action-gh-release@v3
         with:
