@@ -1,5 +1,5 @@
 #define MyAppName "Webflyx RAG Studio"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.3.0"
 #define MyAppPublisher "Alex Unnippillil"
 #define MyAppExeName "WebflyxRAG.exe"
 
@@ -20,6 +20,9 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 SetupIconFile=..\assets\webflyx.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
+DisableProgramGroupPage=yes
+CloseApplications=yes
+RestartApplications=no
 
 [Files]
 Source: "..\dist\WebflyxRAG\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
