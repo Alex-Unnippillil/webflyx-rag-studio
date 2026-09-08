@@ -1,4 +1,5 @@
 import traceback
+from contextlib import suppress
 
 from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
@@ -11,13 +12,8 @@ class WorkerSignals(QObject):
 
 def _safe_emit(signal, *args) -> None:
     """Emit a Qt signal unless its QObject has already been destroyed."""
-    try:
+    with suppress(RuntimeError):
         signal.emit(*args)
-    except RuntimeError:
-        # The application may be shutting down while a background task finishes.
-        # Qt deletes signal sources during teardown; emitting after that must not
-        # crash the worker thread.
-        pass
 
 
 class Worker(QRunnable):
