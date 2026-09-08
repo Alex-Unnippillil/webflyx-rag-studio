@@ -9,6 +9,17 @@ class WorkerSignals(QObject):
     finished = Signal()
 
 
+def _safe_emit(signal, *args) -> None:
+    """Emit a Qt signal unless its QObject has already been destroyed."""
+    try:
+        signal.emit(*args)
+    except RuntimeError:
+        # The application may be shutting down while a background task finishes.
+        # Qt deletes signal sources during teardown; emitting after that must not
+        # crash the worker thread.
+        pass
+
+
 class Worker(QRunnable):
     def __init__(self, function):
         super().__init__()
@@ -21,8 +32,8 @@ class Worker(QRunnable):
             value = self.function()
         except Exception as exc:
             traceback.print_exc()
-            self.signals.error.emit(str(exc))
+            _safe_emit(self.signals.error, str(exc))
         else:
-            self.signals.result.emit(value)
+            _safe_emit(self.signals.result, value)
         finally:
-            self.signals.finished.emit()
+            _safe_emit(self.signals.finished)
