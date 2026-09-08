@@ -1,0 +1,42 @@
+# Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Models and generated caches
+cache/
+models/
+*.npy
+*.npz
+
+# Build outputs
+build/
+dist/
+dist-installer/
+dist-release/
+
+# Local datasets
+data/movies.json
+
+# Logs
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Course backups
+*.bak
+*.bak_*
+*.before_*
